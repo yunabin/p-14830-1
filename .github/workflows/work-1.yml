@@ -6,7 +6,6 @@ on:
       - 'src/**'
       - 'build.gradle'
       - 'Dockerfile'
-      - 'index.html'
     branches:
       - main
 jobs:
@@ -36,7 +35,16 @@ jobs:
     name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
+  
     steps:
+      - uses: actions/checkout@v6
+      - name: src/private.html 생성
+        env:
+          PRIVATE_HTML: ${{ secrets.PRIVATE_HTML }}
+        run: |
+          cat <<EOF > src/private.html
+          $PRIVATE_HTML
+          EOF
       - uses: actions/checkout@v4
       - name: Docker Buildx 설치
         uses: docker/setup-buildx-action@v2
