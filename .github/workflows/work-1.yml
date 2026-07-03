@@ -5,6 +5,7 @@ on:
       - '.github/workflows/**'
       - 'src/**'
       - 'build.gradle'
+      - 'build.gradle.kts'
       - 'Dockerfile'
     branches:
       - main
@@ -14,7 +15,7 @@ jobs:
     outputs:
       tag_name: ${{ steps.create_tag.outputs.new_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Create Tag
         id: create_tag
         uses: mathieudutour/github-tag-action@v6.2
@@ -22,12 +23,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.create_tag.outputs.new_tag }}
-          release_name: Release ${{ steps.create_tag.outputs.new_tag }}
+          name: Release ${{ steps.create_tag.outputs.new_tag }}
           body: ${{ steps.create_tag.outputs.changelog }}
           draft: false
           prerelease: false
@@ -45,11 +44,10 @@ jobs:
           cat <<EOF > src/private.html
           $PRIVATE_HTML
           EOF
-      - uses: actions/checkout@v4
       - name: Docker Buildx 설치
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: 레지스트리 로그인
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -60,10 +58,12 @@ jobs:
         env:
           OWNER: '${{ github.repository_owner }}'
       - name: 빌드 앤 푸시
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/deploy:${{ needs.makeTagAndRelease.outputs.tag_name }},
-            ghcr.io/${{ env.OWNER_LC }}/deploy:latest
+            ghcr.io/${{ env.OWNER_LC }}/p-14830-1:${{ needs.makeTagAndRelease.outputs.tag_name }}
+            ghcr.io/${{ env.OWNER_LC }}/p-14830-1:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
